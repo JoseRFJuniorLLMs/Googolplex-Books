@@ -47,7 +47,7 @@ MODEL_BACKEND = os.getenv("MODEL_BACKEND", "ollama")
 
 # Ollama
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:7b")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:7b")  # Modelo rápido recomendado
 
 # Gemini (fallback)
 GEMINI_API_KEY = os.getenv("GOOGLE_API_KEY", "")
