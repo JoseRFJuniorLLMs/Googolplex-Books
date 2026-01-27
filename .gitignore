@@ -1,36 +1,39 @@
+# ===========================================
+# BooksKDP - .gitignore
+# ===========================================
+
 # Ambiente virtual
 .venv/
 venv/
 env/
-modelo/
-docx/
-logs/
-.env/
-idea/
-.env
-CALIBRE/
 
 # Variáveis de ambiente (nunca versionar API keys)
 .env
+.env.local
+.env.production
 
-# Arquivos temporários ou sensíveis
+# IDEs
+.vscode/
+.idea/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+*.egg
+
+# Arquivos temporários
 *.log
 *.tmp
 *.bak
 *.swp
 *.DS_Store
 Thumbs.db
-
-# Arquivos de saída do livro
-Livro_Final_Formatado.docx
-
-# IDEs e ferramentas (VSCode, PyCharm etc.)
-.vscode/
-.idea/
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
+~$*.docx
 
 # Testes e cache
 .pytest_cache/
@@ -38,5 +41,31 @@ __pycache__/
 dist/
 build/
 
-# Arquivos Office gerados ou temporários
-~$*.docx
+# ===========================================
+# ARQUIVOS GRANDES (GitHub limit 100MB)
+# ===========================================
+
+# Modelos de IA (Ollama baixa automaticamente)
+*.gguf
+*.bin
+*.safetensors
+modelo/models/
+
+# Arquivos muito grandes
+*.zip
+*.tar.gz
+*.rar
+
+# ===========================================
+# INCLUIR NO REPOSITÓRIO:
+# ===========================================
+# - data/*.db (banco de dados)
+# - txt/ (textos extraídos)
+# - translated/ (traduções)
+# - docx/ (documentos gerados)
+# - templates/ (HTML)
+# - static/ (CSS)
+# - config/ (configurações)
+# - src/ (código fonte)
+# - modelo/*.py (scripts antigos - referência)
+# ===========================================
