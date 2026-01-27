@@ -33,7 +33,8 @@ while ($true) {
         
         try {
             # Adiciona todos os arquivos (não apenas em txt, para garantir consistência do repo, conforme pedido 'git add .')
-            git add .
+            # Adiciona todos os arquivos, excluindo explicitamente o arquivo bugado 'nul'
+            git add . ":(exclude)nul"
             
             # Verifica se há algo para commitar depois do add
             $status_after_add = git status --porcelain
