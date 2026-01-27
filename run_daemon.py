@@ -309,19 +309,19 @@ class CycleExecutor:
         books_before = self.count_files(txt_dir, "*.txt")
         translated_before = self.count_files(translated_dir, "*_pt.txt")
 
-        # 1. HUNTER - Baixar livros
+        # 1. DUAL HUNTER - Baixar livros (Gutenberg + Archive.org)
         hunter_cmd = [
             sys.executable,
-            'run_hunter.py',
+            'run_dual_hunter.py',
             '--languages'] + self.languages + [
             '--limit', str(self.batch_size)
         ]
 
-        logger.info(f"📥 Fase 1/2: Baixando livros ({self.batch_size} por idioma)")
+        logger.info(f"📥 Fase 1/2: Baixando livros ({self.batch_size} por idioma de 2 fontes)")
         hunter_result = self.run_command(
-            "Hunter",
+            "Dual Hunter (Gutenberg + Archive.org)",
             hunter_cmd,
-            timeout=3600  # 1 hora
+            timeout=7200  # 2 horas (mais tempo para 2 fontes)
         )
 
         if not hunter_result['success']:
