@@ -1,8 +1,8 @@
 {
   "total_books_downloaded": 0,
-  "total_books_translated": 12,
-  "total_cycles": 6,
-  "total_errors": 7,
+  "total_books_translated": 14,
+  "total_cycles": 7,
+  "total_errors": 8,
   "start_time": "2026-01-27T09:24:20.126745",
-  "last_cycle": "2026-01-28T02:48:25.684615"
+  "last_cycle": "2026-01-28T03:46:54.777412"
 }
