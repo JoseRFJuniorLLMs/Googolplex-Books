@@ -247,78 +247,119 @@ class GeminiImagenGenerator(CoverGenerator):
     def generate(self, author: str, title: str, analysis: Dict, output_path: Path) -> bool:
         """Gera capa com Gemini Imagen."""
         try:
-            import google.generativeai as genai
-            genai.configure(api_key=self.api_key)
+            prompt = self.create_prompt(author, title, analysis)
+            logger.info(f"🎨 Gerando capa com Gemini Imagen...")
 
-            # Gemini atualmente usa Imagen através de sua API
-            # Nota: A API de geração de imagens do Gemini ainda está em desenvolvimento
-            # Este é um placeholder para quando estiver disponível
+            # Usa a API Imagen do Google AI Studio
+            response = requests.post(
+                "https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict",
+                headers={
+                    "Content-Type": "application/json",
+                    "x-goog-api-key": self.api_key
+                },
+                json={
+                    "instances": [
+                        {
+                            "prompt": prompt
+                        }
+                    ],
+                    "parameters": {
+                        "sampleCount": 1,
+                        "aspectRatio": "9:16",  # Proporção de capa
+                        "safetySettings": [
+                            {
+                                "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+                                "threshold": "BLOCK_ONLY_HIGH"
+                            }
+                        ]
+                    }
+                },
+                timeout=120
+            )
 
-            logger.warning("⚠️ Gemini Imagen ainda não totalmente suportado via API pública")
-            logger.info("Use DALL-E 3 ou APIs alternativas por enquanto")
+            if response.status_code != 200:
+                logger.error(f"Gemini API erro {response.status_code}: {response.text}")
+                return False
 
-            return False
+            data = response.json()
+
+            # Extrai imagem (base64)
+            if "predictions" in data and len(data["predictions"]) > 0:
+                import base64
+                image_b64 = data["predictions"][0]["bytesBase64Encoded"]
+                image_data = base64.b64decode(image_b64)
+
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+                output_path.write_bytes(image_data)
+
+                logger.info(f"✅ Capa Gemini salva: {output_path}")
+                return True
+            else:
+                logger.error("❌ Gemini não retornou imagem")
+                return False
 
         except Exception as e:
             logger.error(f"❌ Erro Gemini Imagen: {e}")
             return False
 
 
-class StabilityAIGenerator(CoverGenerator):
-    """Gerador usando Stability AI (Stable Diffusion)."""
+class GrokGenerator(CoverGenerator):
+    """Gerador usando xAI Grok."""
 
     def __init__(self, api_key: str):
-        super().__init__("Stability-AI")
+        super().__init__("Grok-xAI")
         self.api_key = api_key
 
         if not api_key:
-            raise ValueError("STABILITY_API_KEY não configurada")
+            raise ValueError("XAI_API_KEY não configurada")
 
     def generate(self, author: str, title: str, analysis: Dict, output_path: Path) -> bool:
-        """Gera capa com Stability AI."""
+        """Gera capa com Grok."""
         try:
             prompt = self.create_prompt(author, title, analysis)
-            logger.info(f"🎨 Gerando capa com Stability AI...")
+            logger.info(f"🎨 Gerando capa com Grok (xAI)...")
 
+            # xAI Grok usa API compatível com OpenAI
             response = requests.post(
-                "https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image",
+                "https://api.x.ai/v1/images/generations",
                 headers={
                     "Content-Type": "application/json",
                     "Authorization": f"Bearer {self.api_key}",
                 },
                 json={
-                    "text_prompts": [
-                        {
-                            "text": prompt,
-                            "weight": 1
-                        }
-                    ],
-                    "cfg_scale": 7,
-                    "height": 1792,
-                    "width": 1024,
-                    "samples": 1,
-                    "steps": 30,
+                    "model": "grok-vision-beta",
+                    "prompt": prompt,
+                    "n": 1,
+                    "size": "1024x1792",  # Proporção de capa
+                    "response_format": "url"
                 },
                 timeout=120
             )
 
             if response.status_code != 200:
-                raise Exception(f"API retornou {response.status_code}: {response.text}")
+                logger.error(f"Grok API erro {response.status_code}: {response.text}")
+                return False
 
             data = response.json()
 
-            # Salva primeira imagem
-            import base64
-            image_data = base64.b64decode(data["artifacts"][0]["base64"])
+            if "data" in data and len(data["data"]) > 0:
+                image_url = data["data"][0]["url"]
 
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-            output_path.write_bytes(image_data)
+                # Download da imagem
+                img_response = requests.get(image_url, timeout=60)
+                img_response.raise_for_status()
 
-            logger.info(f"✅ Capa Stability AI salva: {output_path}")
-            return True
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+                output_path.write_bytes(img_response.content)
+
+                logger.info(f"✅ Capa Grok salva: {output_path}")
+                return True
+            else:
+                logger.error("❌ Grok não retornou imagem")
+                return False
 
         except Exception as e:
-            logger.error(f"❌ Erro Stability AI: {e}")
+            logger.error(f"❌ Erro Grok: {e}")
             return False
 
 # ============================================================================
@@ -347,21 +388,21 @@ class BookCoverOrchestrator:
             except Exception as e:
                 logger.warning(f"⚠️ Gemini Imagen desabilitado: {e}")
 
-        # Stability AI (requer chave separada)
-        stability_key = os.getenv("STABILITY_API_KEY", "")
-        if stability_key:
+        # xAI Grok (requer chave separada)
+        xai_key = os.getenv("XAI_API_KEY", "")
+        if xai_key:
             try:
-                self.generators.append(StabilityAIGenerator(stability_key))
-                logger.info("✅ Stability AI habilitado")
+                self.generators.append(GrokGenerator(xai_key))
+                logger.info("✅ Grok (xAI) habilitado")
             except Exception as e:
-                logger.warning(f"⚠️ Stability AI desabilitado: {e}")
+                logger.warning(f"⚠️ Grok desabilitado: {e}")
 
         if not self.generators:
             logger.warning("⚠️ Nenhum gerador de imagem disponível!")
             logger.info("Configure pelo menos uma API key:")
             logger.info("  - OPENAI_API_KEY para DALL-E 3")
-            logger.info("  - GOOGLE_API_KEY para Gemini")
-            logger.info("  - STABILITY_API_KEY para Stability AI")
+            logger.info("  - GOOGLE_API_KEY para Gemini Imagen")
+            logger.info("  - XAI_API_KEY para Grok (xAI)")
 
     def generate_covers(self, book_txt_path: Path, docx_path: Path = None) -> Dict[str, Path]:
         """

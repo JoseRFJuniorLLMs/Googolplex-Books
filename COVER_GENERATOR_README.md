@@ -11,9 +11,9 @@ O Cover Generator:
 4. ✅ Cria capas usando múltiplas APIs de IA
 5. ✅ Salva as imagens junto com o arquivo DOCX
 
-## 🤖 APIs Suportadas
+## 🤖 APIs Suportadas (Os 3)
 
-### 1. OpenAI DALL-E 3 (Recomendado)
+### 1. OpenAI DALL-E 3
 
 **Qualidade:** ⭐⭐⭐⭐⭐
 **Custo:** $0.040 por imagem (1024x1792)
@@ -36,34 +36,46 @@ OPENAI_API_KEY=sk-...
 2. Crie uma nova chave
 3. Configure no ambiente
 
-### 2. Google Gemini Imagen
+### 2. Google Gemini Imagen 3.0
 
-**Qualidade:** ⭐⭐⭐⭐
-**Status:** Em desenvolvimento (API limitada)
+**Qualidade:** ⭐⭐⭐⭐⭐
+**Custo:** Consultar pricing do Google AI Studio
 **Velocidade:** ~20-30 segundos
 
 **Como configurar:**
 ```bash
+# Windows
+set GOOGLE_API_KEY=...
+
+# .env
 GOOGLE_API_KEY=...
 ```
 
-**Nota:** A API de geração de imagens do Gemini ainda está em beta.
+**Obter API key:**
+1. Acesse https://aistudio.google.com/app/apikey
+2. Crie uma API key
+3. Configure no ambiente
 
-### 3. Stability AI (Stable Diffusion XL)
+### 3. xAI Grok
 
 **Qualidade:** ⭐⭐⭐⭐⭐
-**Custo:** $0.016 por imagem (1024x1792)
-**Velocidade:** ~15-25 segundos
+**Custo:** Consultar pricing do xAI
+**Velocidade:** ~25-35 segundos
 
 **Como configurar:**
 ```bash
-STABILITY_API_KEY=...
+# Windows
+set XAI_API_KEY=...
+
+# .env
+XAI_API_KEY=...
 ```
 
 **Obter API key:**
-1. Acesse https://platform.stability.ai/account/keys
-2. Crie uma conta e chave
-3. Configure no ambiente
+1. Acesse https://console.x.ai
+2. Crie uma conta xAI
+3. Gere uma API key
+4. Configure no ambiente
 
 ## 🚀 Como usar
 
@@ -173,14 +185,14 @@ O hash `abc12345` é baseado em autor+título para evitar duplicatas.
 ## 📊 Resultados Esperados
 
 **Por livro:**
-- 1-3 capas (dependendo das APIs configuradas)
-- Tempo total: ~1-2 minutos
-- Custo: ~$0.04-0.06 (se usar APIs pagas)
+- 3 capas (uma de cada API: DALL-E 3, Gemini, Grok)
+- Tempo total: ~1.5-2 minutos
+- Custo: ~$0.04-0.10 (dependendo das APIs)
 
 **Batch (27 livros traduzidos):**
-- 27-81 capas
-- Tempo total: ~30-60 minutos
-- Custo: ~$1.08-1.62
+- 81 capas (27 x 3 APIs)
+- Tempo total: ~40-60 minutos
+- Custo: ~$1.08-2.70 (dependendo das APIs)
 
 ## 🔧 Integração com Daemon
 
@@ -212,10 +224,10 @@ O daemon agora tem **4 fases** por ciclo:
 ### Variáveis de ambiente (.env)
 
 ```bash
-# APIs de Imagem
-OPENAI_API_KEY=sk-...
-GOOGLE_API_KEY=...
-STABILITY_API_KEY=...
+# APIs de Imagem (Os 3)
+OPENAI_API_KEY=sk-...         # DALL-E 3
+GOOGLE_API_KEY=...            # Gemini Imagen
+XAI_API_KEY=...               # Grok (xAI)
 
 # Ollama (análise do livro)
 OLLAMA_BASE_URL=http://localhost:11434
@@ -267,18 +279,18 @@ Visual: clean, modern, technical
 
 ### Velocidade por API
 
-| API | Tempo médio | Qualidade | Custo |
-|-----|-------------|-----------|-------|
+| API | Tempo médio | Qualidade | Custo estimado |
+|-----|-------------|-----------|----------------|
 | DALL-E 3 | 35s | ⭐⭐⭐⭐⭐ | $0.040 |
-| Stability AI | 20s | ⭐⭐⭐⭐⭐ | $0.016 |
-| Gemini | 25s | ⭐⭐⭐⭐ | TBD |
+| Gemini Imagen | 25s | ⭐⭐⭐⭐⭐ | ~$0.02-0.04 |
+| Grok (xAI) | 30s | ⭐⭐⭐⭐⭐ | ~$0.03-0.05 |
 
 ### Batch Processing
 
 Para 27 livros:
 - Análise: ~10 min (Ollama local)
-- Geração: ~15-45 min (depende das APIs)
-- Total: ~25-55 min
+- Geração: ~40-60 min (3 APIs x 27 livros)
+- Total: ~50-70 min
 
 ## 🛠️ Troubleshooting
 
@@ -288,10 +300,10 @@ Para 27 livros:
 
 **Solução:**
 ```bash
-# Configure pelo menos uma:
-set OPENAI_API_KEY=sk-...
-# OU
-set STABILITY_API_KEY=...
+# Configure as 3 APIs:
+set OPENAI_API_KEY=sk-...      # DALL-E 3
+set GOOGLE_API_KEY=...         # Gemini
+set XAI_API_KEY=...            # Grok
 ```
 
 ### "Ollama não disponível"
@@ -327,22 +339,23 @@ ollama pull qwen2.5:7b
 
 ## 💡 Dicas
 
-### 1. Comece com DALL-E 3
+### 1. Configure as 3 APIs para máxima variedade
 
-É a API mais confiável e com melhor qualidade.
+Cada API tem seu estilo único:
+- **DALL-E 3:** Mais artístico e criativo
+- **Gemini:** Estilo equilibrado e profissional
+- **Grok:** Estilo próprio do xAI
 
 ```bash
 set OPENAI_API_KEY=sk-...
+set GOOGLE_API_KEY=...
+set XAI_API_KEY=...
 python src\cover_generator.py --batch
 ```
 
-### 2. Use Stability AI para economizar
+### 2. Resultado: 3 opções para escolher
 
-Metade do preço do DALL-E 3, qualidade similar.
-
-```bash
-set STABILITY_API_KEY=...
-```
+Com as 3 APIs configuradas, você terá 3 capas diferentes para cada livro e poderá escolher a melhor!
 
 ### 3. Teste com um livro primeiro
 
@@ -373,8 +386,9 @@ Após rodar o sistema completo, você terá:
 translated/
 ├── Chess/
 │   ├── Nezhmetdinov_pt.txt          # Livro traduzido
-│   ├── cover_abc123_dalle_3.png     # Capa 1
-│   └── cover_abc123_stability_ai.png # Capa 2
+│   ├── cover_abc123_dalle_3.png     # Capa DALL-E 3
+│   ├── cover_abc123_gemini_imagen.png # Capa Gemini
+│   └── cover_abc123_grok_xai.png    # Capa Grok
 
 docx/
 ├── Chess/
@@ -386,17 +400,22 @@ GitHub
 
 ## 📞 APIs e Recursos
 
-**OpenAI:**
+**OpenAI (DALL-E 3):**
 - Docs: https://platform.openai.com/docs/guides/images
 - Preços: https://openai.com/pricing
 - API Keys: https://platform.openai.com/api-keys
 
-**Stability AI:**
-- Docs: https://platform.stability.ai/docs/api-reference
-- Preços: https://platform.stability.ai/pricing
-- API Keys: https://platform.stability.ai/account/keys
+**Google (Gemini Imagen):**
+- Docs: https://ai.google.dev/gemini-api/docs/imagen
+- API Keys: https://aistudio.google.com/app/apikey
+- Preços: https://ai.google.dev/pricing
 
-**Ollama (local):**
+**xAI (Grok):**
+- Site: https://x.ai
+- Console: https://console.x.ai
+- Docs: https://docs.x.ai
+
+**Ollama (análise local):**
 - Site: https://ollama.com
 - Modelos: https://ollama.com/library
 
@@ -404,10 +423,13 @@ GitHub
 
 - [ ] Ollama instalado e rodando
 - [ ] Modelo `qwen2.5:7b` baixado (`ollama pull qwen2.5:7b`)
-- [ ] Pelo menos uma API key configurada (DALL-E 3 recomendado)
+- [ ] **As 3 API keys configuradas:**
+  - [ ] OPENAI_API_KEY (DALL-E 3)
+  - [ ] GOOGLE_API_KEY (Gemini Imagen)
+  - [ ] XAI_API_KEY (Grok)
 - [ ] Livros traduzidos em `translated/`
 - [ ] Testou com um livro individual
-- [ ] Pronto para batch!
+- [ ] Pronto para batch com 3 capas por livro!
 
 ---
 
