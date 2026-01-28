@@ -161,27 +161,71 @@ class CoverGenerator:
         self.api_name = api_name
 
     def create_prompt(self, author: str, title: str, analysis: Dict) -> str:
-        """Cria prompt otimizado para geração de capa."""
+        """Cria prompt otimizado seguindo padrões KDP para geração de capa."""
         genre = analysis.get('genre', 'livro')
         style = analysis.get('style', 'clássico')
         mood = analysis.get('mood', 'contemplativo')
         themes = ', '.join(analysis.get('themes', []))
 
-        prompt = f"""Book cover design for "{title}" by {author}.
+        prompt = f"""Professional book cover design for Amazon KDP/Kindle Direct Publishing.
 
-Genre: {genre}
-Themes: {themes}
-Style: {style}, {mood}
+BOOK DETAILS:
+- Title: "{title}"
+- Author: {author}
+- Genre: {genre}
+- Themes: {themes}
+- Mood: {mood}, {style}
 
-Visual requirements:
-- Professional book cover design
-- Clean typography with title and author name
-- Evocative imagery that captures the book's essence
-- High contrast and readability
-- Suitable for print and digital
-- No text or words in the image (will be added later)
+TECHNICAL SPECIFICATIONS (KDP Standards):
+- Aspect ratio: 1.6:1 (height to width) - CRITICAL for KDP
+- Orientation: Portrait/vertical
+- Resolution: High-quality, print-ready (300 DPI equivalent)
+- Format considerations: Suitable for both ebook thumbnail and print cover
+- Color space: RGB for digital, but with CMYK-safe colors
 
-Style: elegant, professional, publishable quality"""
+DESIGN REQUIREMENTS:
+
+1. COMPOSITION:
+   - Central focal point that captures the book's essence
+   - Clear visual hierarchy with strong focal area
+   - Safe margins: Keep important imagery 0.125" from edges
+   - Rule of thirds composition for balanced layout
+   - Leave ample space at top (for title) and bottom (for author name)
+
+2. VISUAL STYLE:
+   - Genre-appropriate imagery ({genre} style)
+   - Professional, publishable quality
+   - Commercial book cover aesthetics
+   - Evocative and thematic: {themes}
+   - Mood: {mood}
+
+3. COLOR & CONTRAST:
+   - High contrast for thumbnail visibility
+   - Bold, eye-catching color palette
+   - Colors that stand out in search results
+   - Readable at small sizes (important for Amazon thumbnails)
+
+4. IMAGE CONTENT:
+   - NO text, letters, or words in the image
+   - NO typography or font elements
+   - Clear, recognizable imagery even at thumbnail size
+   - Symbolism related to: {themes}
+   - Professional photography/illustration quality
+
+5. MARKETABILITY:
+   - Should attract target audience for {genre}
+   - Competitive with bestsellers in category
+   - Thumbnail-friendly (legible at 200x300 pixels)
+   - Print-ready quality for paperback
+
+6. LAYOUT ZONES:
+   - Top 20%: Reserved for title placement (keep imagery subtle here)
+   - Middle 60%: Main visual focus, strongest imagery
+   - Bottom 20%: Reserved for author name (keep clear)
+
+STYLE DIRECTION: {style}, {mood}, professional, bestseller-quality, commercial, print-ready
+
+Create a stunning, professional book cover background that will make this book stand out on Amazon and in bookstores. The cover should be immediately eye-catching and genre-appropriate."""
 
         return prompt
 
@@ -212,7 +256,7 @@ class DallE3Generator(CoverGenerator):
             response = client.images.generate(
                 model="dall-e-3",
                 prompt=prompt,
-                size="1024x1792",  # Proporção de capa de livro
+                size="1024x1792",  # Vertical (1.75:1) - mais próximo do KDP 1.6:1
                 quality="hd",
                 n=1
             )
@@ -265,7 +309,7 @@ class GeminiImagenGenerator(CoverGenerator):
                     ],
                     "parameters": {
                         "sampleCount": 1,
-                        "aspectRatio": "9:16",  # Proporção de capa
+                        "aspectRatio": "5:8",  # 1.6:1 - padrão KDP exato
                         "safetySettings": [
                             {
                                 "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
@@ -330,7 +374,8 @@ class GrokGenerator(CoverGenerator):
                     "model": "grok-vision-beta",
                     "prompt": prompt,
                     "n": 1,
-                    "size": "1024x1792",  # Proporção de capa
+                    "size": "1024x1792",  # Vertical (1.75:1) - mais próximo do KDP 1.6:1
+                    "quality": "hd",  # Alta qualidade para impressão
                     "response_format": "url"
                 },
                 timeout=120

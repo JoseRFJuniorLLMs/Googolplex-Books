@@ -7,9 +7,34 @@ Sistema que gera capas profissionais de livros usando múltiplas APIs de IA.
 O Cover Generator:
 1. ✅ Lê autor e título do livro
 2. ✅ Analisa o tema do livro usando IA local (Ollama)
-3. ✅ Gera prompts otimizados para cada API de imagem
+3. ✅ Gera prompts otimizados seguindo **padrões KDP/Amazon**
 4. ✅ Cria capas usando múltiplas APIs de IA
 5. ✅ Salva as imagens junto com o arquivo DOCX
+
+## 📐 Padrões KDP (Kindle Direct Publishing)
+
+As capas são geradas seguindo as especificações da Amazon KDP:
+
+**Proporções:**
+- **Ideal KDP:** 1.6:1 (altura:largura) - ex: 1600x2560px
+- **DALL-E 3:** 1024x1792px (1.75:1) - próximo do ideal
+- **Gemini:** Proporção 5:8 (1.6:1) - **EXATO ao padrão KDP** ⭐
+- **Grok:** 1024x1792px (1.75:1) - próximo do ideal
+
+**Especificações técnicas:**
+- ✅ Alta resolução (equivalente a 300 DPI)
+- ✅ Orientação vertical (portrait)
+- ✅ Cores vibrantes e alto contraste
+- ✅ Legível em thumbnail (200x300px)
+- ✅ Pronto para impressão e ebook
+
+**Design profissional:**
+- ✅ Margens de segurança (0.125")
+- ✅ Espaço para título (topo 20%)
+- ✅ Foco visual central (meio 60%)
+- ✅ Espaço para autor (base 20%)
+- ✅ Sem texto na imagem (será adicionado depois)
+- ✅ Composição pela regra dos terços
 
 ## 🤖 APIs Suportadas (Os 3)
 
@@ -76,6 +101,33 @@ XAI_API_KEY=...
 2. Crie uma conta xAI
 3. Gere uma API key
 4. Configure no ambiente
+
+## 🎨 Prompt Profissional Otimizado
+
+O sistema usa um **prompt avançado** que instrui as IAs a seguir:
+
+### Especificações Técnicas KDP
+- Proporção 1.6:1 (altura:largura)
+- Alta resolução (300 DPI equivalente)
+- Cores vibrantes e alto contraste
+- Legível em thumbnail
+
+### Composição Profissional
+- **Topo 20%:** Espaço para título (imagery sutil)
+- **Meio 60%:** Foco visual principal (imagem forte)
+- **Base 20%:** Espaço para nome do autor (área limpa)
+
+### Elementos Visuais
+- Focal point central claro
+- Regra dos terços
+- Margens de segurança 0.125"
+- Hierarquia visual definida
+
+### Marketability
+- Atrativo para o gênero específico
+- Competitivo com bestsellers
+- Funciona em thumbnail pequeno (200x300px)
+- Qualidade de impressão profissional
 
 ## 🚀 Como usar
 
@@ -243,37 +295,81 @@ pip install requests
 pip install python-dotenv
 ```
 
-## 🎯 Exemplos de Prompts Gerados
+## 🎯 Exemplo de Prompt Completo Gerado
 
-### Ficção Científica
-
-```
-Book cover design for "1984" by George Orwell.
-Genre: distopia
-Themes: vigilância, controle, totalitarismo
-Style: sombrio, opressivo
-Visual: professional, high contrast, evocative
-```
-
-### Romance
+### Para "1984" de George Orwell (Ficção Científica):
 
 ```
-Book cover design for "Orgulho e Preconceito" by Jane Austen.
-Genre: romance clássico
-Themes: amor, sociedade, classes sociais
-Style: elegante, clássico
-Visual: professional, romantic, period-appropriate
+Professional book cover design for Amazon KDP/Kindle Direct Publishing.
+
+BOOK DETAILS:
+- Title: "1984"
+- Author: George Orwell
+- Genre: distopia
+- Themes: vigilância, controle, totalitarismo
+- Mood: sombrio, opressivo
+
+TECHNICAL SPECIFICATIONS (KDP Standards):
+- Aspect ratio: 1.6:1 (height to width) - CRITICAL for KDP
+- Orientation: Portrait/vertical
+- Resolution: High-quality, print-ready (300 DPI equivalent)
+- Format considerations: Suitable for both ebook thumbnail and print cover
+- Color space: RGB for digital, but with CMYK-safe colors
+
+DESIGN REQUIREMENTS:
+
+1. COMPOSITION:
+   - Central focal point that captures the book's essence
+   - Clear visual hierarchy with strong focal area
+   - Safe margins: Keep important imagery 0.125" from edges
+   - Rule of thirds composition for balanced layout
+   - Leave ample space at top (for title) and bottom (for author name)
+
+2. VISUAL STYLE:
+   - Genre-appropriate imagery (distopia style)
+   - Professional, publishable quality
+   - Commercial book cover aesthetics
+   - Evocative and thematic: vigilância, controle, totalitarismo
+   - Mood: sombrio, opressivo
+
+3. COLOR & CONTRAST:
+   - High contrast for thumbnail visibility
+   - Bold, eye-catching color palette
+   - Colors that stand out in search results
+   - Readable at small sizes (important for Amazon thumbnails)
+
+4. IMAGE CONTENT:
+   - NO text, letters, or words in the image
+   - NO typography or font elements
+   - Clear, recognizable imagery even at thumbnail size
+   - Symbolism related to: vigilância, controle, totalitarismo
+   - Professional photography/illustration quality
+
+5. MARKETABILITY:
+   - Should attract target audience for distopia
+   - Competitive with bestsellers in category
+   - Thumbnail-friendly (legible at 200x300 pixels)
+   - Print-ready quality for paperback
+
+6. LAYOUT ZONES:
+   - Top 20%: Reserved for title placement (keep imagery subtle here)
+   - Middle 60%: Main visual focus, strongest imagery
+   - Bottom 20%: Reserved for author name (keep clear)
+
+STYLE DIRECTION: sombrio, opressivo, professional, bestseller-quality, commercial, print-ready
+
+Create a stunning, professional book cover background that will make this book
+stand out on Amazon and in bookstores. The cover should be immediately
+eye-catching and genre-appropriate.
 ```
 
-### Técnico
-
-```
-Book cover design for "Clean Code" by Robert Martin.
-Genre: técnico
-Themes: programação, qualidade, boas práticas
-Style: minimalista, profissional
-Visual: clean, modern, technical
-```
+### Resultado Esperado:
+- ✅ Imagem distópica com paleta sombria (cinzas, azuis escuros, vermelhos)
+- ✅ Simbolismo visual (câmeras, olho, cidade opressiva)
+- ✅ Alto contraste para legibilidade
+- ✅ Espaço limpo no topo e base para texto
+- ✅ Impacto visual mesmo em thumbnail
+- ✅ Qualidade profissional de bestseller
 
 ## 📈 Performance
 
@@ -336,6 +432,42 @@ ollama pull qwen2.5:7b
 - Normal em horários de pico
 - Tente novamente
 - Aumente timeout no código se necessário
+
+## 📦 Preparando para KDP/Amazon
+
+Após gerar as capas, você precisa adicionar o texto (título e autor):
+
+### Opção 1: Usar Canva (Recomendado)
+1. Acesse [Canva.com](https://canva.com)
+2. Crie design personalizado: 1600x2560px
+3. Faça upload da capa gerada como fundo
+4. Adicione título e nome do autor com fontes profissionais
+5. Exporte em PNG de alta qualidade
+
+### Opção 2: Usar Photoshop/GIMP
+1. Abra a capa gerada
+2. Adicione camada de texto
+3. Título: Fonte grande, bold, no topo
+4. Autor: Fonte média, na base
+5. Use cores contrastantes
+6. Salve em PNG ou JPEG de alta qualidade
+
+### Opção 3: Ferramenta online KDP Cover Creator
+1. Acesse [KDP Cover Creator](https://kdp.amazon.com)
+2. Faça upload da imagem de fundo
+3. Use as ferramentas nativas para adicionar texto
+4. Preview em diferentes tamanhos
+5. Download final
+
+### Checklist KDP:
+- [ ] Proporção 1.6:1 ou próxima
+- [ ] Mínimo 1000px no lado curto
+- [ ] Máximo 10.000px no lado longo
+- [ ] Título legível em thumbnail
+- [ ] Cores vibrantes
+- [ ] Sem bordas brancas
+- [ ] Formato: JPEG ou TIFF
+- [ ] Tamanho arquivo: máx 50MB
 
 ## 💡 Dicas
 
