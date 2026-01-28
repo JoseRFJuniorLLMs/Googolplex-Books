@@ -1,0 +1,497 @@
+# -*- coding: utf-8 -*-
+"""
+COVER_GENERATOR.PY - Gerador de Capas de Livros com IA
+=======================================================
+Gera capas de livros usando múltiplas APIs de IA:
+- OpenAI DALL-E 3
+- Google Gemini Imagen
+- Outras APIs de geração de imagem
+
+Processo:
+1. Lê autor e título do livro
+2. Analisa o tema do livro usando IA local (Ollama)
+3. Gera prompts otimizados para cada API
+4. Cria capas com cada API
+5. Salva imagens no mesmo diretório do DOCX
+"""
+
+import os
+import sys
+import time
+import logging
+import hashlib
+import requests
+from pathlib import Path
+from datetime import datetime
+from typing import Optional, Dict, List, Tuple
+
+# Configurações
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from config.settings import (
+    LOG_DIR, OLLAMA_BASE_URL, OLLAMA_MODEL,
+    OPENAI_API_KEY, GEMINI_API_KEY
+)
+
+# ============================================================================
+# LOGGING
+# ============================================================================
+
+LOG_DIR.mkdir(exist_ok=True)
+log_file = LOG_DIR / f"cover_generator_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s | %(levelname)-8s | %(message)s',
+    handlers=[
+        logging.FileHandler(log_file, encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
+# ============================================================================
+# BOOK ANALYZER
+# ============================================================================
+
+class BookAnalyzer:
+    """Analisa livro e extrai tema/gênero usando IA local."""
+
+    def __init__(self, ollama_url: str = OLLAMA_BASE_URL, model: str = OLLAMA_MODEL):
+        self.ollama_url = ollama_url
+        self.model = model
+        self._validate_ollama()
+
+    def _validate_ollama(self):
+        """Valida conexão com Ollama."""
+        try:
+            r = requests.get(f"{self.ollama_url}/api/tags", timeout=5)
+            if r.status_code == 200:
+                logger.info("✅ Ollama conectado")
+            else:
+                raise ConnectionError()
+        except Exception as e:
+            logger.error(f"❌ Ollama não disponível em {self.ollama_url}")
+            logger.info("Instale: https://ollama.com")
+            raise
+
+    def analyze_book(self, author: str, title: str, text_sample: str = "") -> Dict:
+        """
+        Analisa livro e retorna informações sobre tema, gênero, etc.
+
+        Returns:
+            {
+                'genre': 'ficção científica',
+                'themes': ['tecnologia', 'futuro', 'distopia'],
+                'style': 'futurista, sombrio',
+                'summary': 'breve resumo do tema'
+            }
+        """
+        logger.info(f"📖 Analisando: {author} - {title}")
+
+        # Cria amostra do texto se disponível
+        sample_text = text_sample[:2000] if text_sample else ""
+
+        prompt = f"""Analise este livro e retorne APENAS um JSON válido (sem markdown):
+
+Autor: {author}
+Título: {title}
+{f'Trecho: {sample_text[:500]}...' if sample_text else ''}
+
+Retorne no formato JSON:
+{{
+  "genre": "gênero literário (ex: ficção, romance, técnico)",
+  "themes": ["tema1", "tema2", "tema3"],
+  "style": "estilo visual sugerido para capa (ex: minimalista, épico, sombrio)",
+  "mood": "atmosfera (ex: contemplativo, energético, misterioso)",
+  "summary": "resumo de 1 linha do tema principal"
+}}
+
+JSON:"""
+
+        try:
+            r = requests.post(
+                f"{self.ollama_url}/api/generate",
+                json={
+                    "model": self.model,
+                    "prompt": prompt,
+                    "stream": False,
+                    "options": {
+                        "temperature": 0.7,
+                        "num_predict": 500
+                    }
+                },
+                timeout=60
+            )
+            r.raise_for_status()
+
+            response_text = r.json().get("response", "").strip()
+
+            # Tenta extrair JSON
+            import json
+
+            # Remove markdown se houver
+            if "```json" in response_text:
+                response_text = response_text.split("```json")[1].split("```")[0].strip()
+            elif "```" in response_text:
+                response_text = response_text.split("```")[1].split("```")[0].strip()
+
+            analysis = json.loads(response_text)
+            logger.info(f"✅ Análise: gênero={analysis.get('genre')}, temas={analysis.get('themes')}")
+            return analysis
+
+        except Exception as e:
+            logger.warning(f"⚠️ Erro na análise: {e}")
+            # Fallback para análise básica
+            return {
+                'genre': 'literatura',
+                'themes': [title.lower()],
+                'style': 'clássico',
+                'mood': 'contemplativo',
+                'summary': f'Obra de {author}'
+            }
+
+# ============================================================================
+# COVER GENERATORS
+# ============================================================================
+
+class CoverGenerator:
+    """Classe base para geradores de capa."""
+
+    def __init__(self, api_name: str):
+        self.api_name = api_name
+
+    def create_prompt(self, author: str, title: str, analysis: Dict) -> str:
+        """Cria prompt otimizado para geração de capa."""
+        genre = analysis.get('genre', 'livro')
+        style = analysis.get('style', 'clássico')
+        mood = analysis.get('mood', 'contemplativo')
+        themes = ', '.join(analysis.get('themes', []))
+
+        prompt = f"""Book cover design for "{title}" by {author}.
+
+Genre: {genre}
+Themes: {themes}
+Style: {style}, {mood}
+
+Visual requirements:
+- Professional book cover design
+- Clean typography with title and author name
+- Evocative imagery that captures the book's essence
+- High contrast and readability
+- Suitable for print and digital
+- No text or words in the image (will be added later)
+
+Style: elegant, professional, publishable quality"""
+
+        return prompt
+
+    def generate(self, author: str, title: str, analysis: Dict, output_path: Path) -> bool:
+        """Gera capa e salva em output_path. Implementar em subclasses."""
+        raise NotImplementedError()
+
+
+class DallE3Generator(CoverGenerator):
+    """Gerador usando OpenAI DALL-E 3."""
+
+    def __init__(self, api_key: str):
+        super().__init__("DALL-E-3")
+        self.api_key = api_key
+
+        if not api_key:
+            raise ValueError("OPENAI_API_KEY não configurada")
+
+    def generate(self, author: str, title: str, analysis: Dict, output_path: Path) -> bool:
+        """Gera capa com DALL-E 3."""
+        try:
+            from openai import OpenAI
+            client = OpenAI(api_key=self.api_key)
+
+            prompt = self.create_prompt(author, title, analysis)
+            logger.info(f"🎨 Gerando capa com DALL-E 3...")
+
+            response = client.images.generate(
+                model="dall-e-3",
+                prompt=prompt,
+                size="1024x1792",  # Proporção de capa de livro
+                quality="hd",
+                n=1
+            )
+
+            image_url = response.data[0].url
+
+            # Download da imagem
+            img_response = requests.get(image_url, timeout=60)
+            img_response.raise_for_status()
+
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            output_path.write_bytes(img_response.content)
+
+            logger.info(f"✅ Capa DALL-E 3 salva: {output_path}")
+            return True
+
+        except Exception as e:
+            logger.error(f"❌ Erro DALL-E 3: {e}")
+            return False
+
+
+class GeminiImagenGenerator(CoverGenerator):
+    """Gerador usando Google Gemini Imagen."""
+
+    def __init__(self, api_key: str):
+        super().__init__("Gemini-Imagen")
+        self.api_key = api_key
+
+        if not api_key:
+            raise ValueError("GOOGLE_API_KEY não configurada")
+
+    def generate(self, author: str, title: str, analysis: Dict, output_path: Path) -> bool:
+        """Gera capa com Gemini Imagen."""
+        try:
+            import google.generativeai as genai
+            genai.configure(api_key=self.api_key)
+
+            # Gemini atualmente usa Imagen através de sua API
+            # Nota: A API de geração de imagens do Gemini ainda está em desenvolvimento
+            # Este é um placeholder para quando estiver disponível
+
+            logger.warning("⚠️ Gemini Imagen ainda não totalmente suportado via API pública")
+            logger.info("Use DALL-E 3 ou APIs alternativas por enquanto")
+
+            return False
+
+        except Exception as e:
+            logger.error(f"❌ Erro Gemini Imagen: {e}")
+            return False
+
+
+class StabilityAIGenerator(CoverGenerator):
+    """Gerador usando Stability AI (Stable Diffusion)."""
+
+    def __init__(self, api_key: str):
+        super().__init__("Stability-AI")
+        self.api_key = api_key
+
+        if not api_key:
+            raise ValueError("STABILITY_API_KEY não configurada")
+
+    def generate(self, author: str, title: str, analysis: Dict, output_path: Path) -> bool:
+        """Gera capa com Stability AI."""
+        try:
+            prompt = self.create_prompt(author, title, analysis)
+            logger.info(f"🎨 Gerando capa com Stability AI...")
+
+            response = requests.post(
+                "https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image",
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {self.api_key}",
+                },
+                json={
+                    "text_prompts": [
+                        {
+                            "text": prompt,
+                            "weight": 1
+                        }
+                    ],
+                    "cfg_scale": 7,
+                    "height": 1792,
+                    "width": 1024,
+                    "samples": 1,
+                    "steps": 30,
+                },
+                timeout=120
+            )
+
+            if response.status_code != 200:
+                raise Exception(f"API retornou {response.status_code}: {response.text}")
+
+            data = response.json()
+
+            # Salva primeira imagem
+            import base64
+            image_data = base64.b64decode(data["artifacts"][0]["base64"])
+
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            output_path.write_bytes(image_data)
+
+            logger.info(f"✅ Capa Stability AI salva: {output_path}")
+            return True
+
+        except Exception as e:
+            logger.error(f"❌ Erro Stability AI: {e}")
+            return False
+
+# ============================================================================
+# MAIN ORCHESTRATOR
+# ============================================================================
+
+class BookCoverOrchestrator:
+    """Orquestra geração de capas de múltiplas fontes."""
+
+    def __init__(self):
+        self.analyzer = BookAnalyzer()
+        self.generators = []
+
+        # Inicializa geradores disponíveis
+        if OPENAI_API_KEY:
+            try:
+                self.generators.append(DallE3Generator(OPENAI_API_KEY))
+                logger.info("✅ DALL-E 3 habilitado")
+            except Exception as e:
+                logger.warning(f"⚠️ DALL-E 3 desabilitado: {e}")
+
+        if GEMINI_API_KEY:
+            try:
+                self.generators.append(GeminiImagenGenerator(GEMINI_API_KEY))
+                logger.info("✅ Gemini Imagen habilitado")
+            except Exception as e:
+                logger.warning(f"⚠️ Gemini Imagen desabilitado: {e}")
+
+        # Stability AI (requer chave separada)
+        stability_key = os.getenv("STABILITY_API_KEY", "")
+        if stability_key:
+            try:
+                self.generators.append(StabilityAIGenerator(stability_key))
+                logger.info("✅ Stability AI habilitado")
+            except Exception as e:
+                logger.warning(f"⚠️ Stability AI desabilitado: {e}")
+
+        if not self.generators:
+            logger.warning("⚠️ Nenhum gerador de imagem disponível!")
+            logger.info("Configure pelo menos uma API key:")
+            logger.info("  - OPENAI_API_KEY para DALL-E 3")
+            logger.info("  - GOOGLE_API_KEY para Gemini")
+            logger.info("  - STABILITY_API_KEY para Stability AI")
+
+    def generate_covers(self, book_txt_path: Path, docx_path: Path = None) -> Dict[str, Path]:
+        """
+        Gera capas para um livro.
+
+        Args:
+            book_txt_path: Caminho do TXT traduzido
+            docx_path: Caminho do DOCX (opcional, usado para extrair pasta)
+
+        Returns:
+            Dict com paths das capas geradas: {'dalle3': Path(...), 'gemini': Path(...)}
+        """
+        logger.info("="*70)
+        logger.info(f"📚 Gerando capas para: {book_txt_path.name}")
+        logger.info("="*70)
+
+        # Extrai autor e título do path
+        author = book_txt_path.parent.name
+        title = book_txt_path.stem.replace('_pt', '').replace('_', ' ')
+
+        logger.info(f"Autor: {author}")
+        logger.info(f"Título: {title}")
+
+        # Lê amostra do texto
+        try:
+            with open(book_txt_path, 'r', encoding='utf-8') as f:
+                text_sample = f.read(5000)  # Primeiros 5000 chars
+        except:
+            text_sample = ""
+
+        # Analisa o livro
+        analysis = self.analyzer.analyze_book(author, title, text_sample)
+
+        # Define diretório de saída (mesma pasta do DOCX ou pasta do TXT)
+        if docx_path and docx_path.parent.exists():
+            output_dir = docx_path.parent
+        else:
+            output_dir = book_txt_path.parent
+
+        # Gera capas com cada API
+        results = {}
+        book_slug = hashlib.md5(f"{author}_{title}".encode()).hexdigest()[:8]
+
+        for generator in self.generators:
+            api_name = generator.api_name.lower().replace(' ', '_').replace('-', '_')
+            output_path = output_dir / f"cover_{book_slug}_{api_name}.png"
+
+            logger.info(f"\n{'='*50}")
+            logger.info(f"Tentando {generator.api_name}...")
+
+            success = generator.generate(author, title, analysis, output_path)
+
+            if success and output_path.exists():
+                results[api_name] = output_path
+                logger.info(f"✅ {generator.api_name}: {output_path}")
+            else:
+                logger.warning(f"❌ {generator.api_name}: falhou")
+
+            # Delay entre APIs para evitar rate limiting
+            time.sleep(2)
+
+        logger.info("\n" + "="*70)
+        logger.info(f"✅ Capas geradas: {len(results)}/{len(self.generators)}")
+        logger.info("="*70)
+
+        return results
+
+# ============================================================================
+# CLI
+# ============================================================================
+
+def main():
+    """Ponto de entrada CLI."""
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Gerador de Capas de Livros com IA")
+    parser.add_argument('--input', '-i', type=Path, required=True,
+                       help='Arquivo TXT do livro traduzido')
+    parser.add_argument('--docx', '-d', type=Path,
+                       help='Caminho do DOCX (opcional, para definir pasta de saída)')
+    parser.add_argument('--batch', action='store_true',
+                       help='Processa todos os livros em translated/')
+
+    args = parser.parse_args()
+
+    orchestrator = BookCoverOrchestrator()
+
+    if not orchestrator.generators:
+        logger.error("❌ Nenhum gerador disponível. Configure API keys.")
+        return 1
+
+    if args.batch:
+        logger.info("🔄 Modo batch: gerando capas para todos os livros traduzidos")
+
+        base_dir = Path(__file__).parent.parent
+        translated_dir = base_dir / "translated"
+
+        if not translated_dir.exists():
+            logger.error(f"❌ Diretório não encontrado: {translated_dir}")
+            return 1
+
+        # Encontra todos os livros traduzidos
+        txt_files = list(translated_dir.rglob("*_pt.txt"))
+        logger.info(f"Encontrados {len(txt_files)} livros traduzidos")
+
+        success_count = 0
+        for txt_file in txt_files:
+            try:
+                results = orchestrator.generate_covers(txt_file)
+                if results:
+                    success_count += 1
+            except Exception as e:
+                logger.error(f"Erro processando {txt_file}: {e}")
+
+        logger.info(f"\n{'='*70}")
+        logger.info(f"Concluído: {success_count}/{len(txt_files)} livros com capas")
+        logger.info("="*70)
+
+        return 0 if success_count > 0 else 1
+
+    else:
+        # Modo arquivo único
+        if not args.input.exists():
+            logger.error(f"❌ Arquivo não encontrado: {args.input}")
+            return 1
+
+        results = orchestrator.generate_covers(args.input, args.docx)
+
+        return 0 if results else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

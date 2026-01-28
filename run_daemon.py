@@ -357,6 +357,63 @@ class CycleExecutor:
         results['translated'] = max(0, translated_after - translated_before)
         logger.info(f"🌍 Novos livros traduzidos: {results['translated']}")
 
+        # 3. PROCESSOR - Gerar DOCX (se houver novos livros traduzidos)
+        docx_dir = self.base_dir / "docx"
+        results['docx_generated'] = 0
+
+        if results['translated'] > 0:
+            logger.info(f"📝 Fase 3/4: Gerando DOCX dos livros traduzidos")
+
+            processor_cmd = [
+                sys.executable,
+                'src/processor.py',
+                '--batch'
+            ]
+
+            processor_result = self.run_command(
+                "DOCX Processor",
+                processor_cmd,
+                timeout=7200  # 2 horas
+            )
+
+            if processor_result['success']:
+                # Conta DOCXs gerados
+                docx_after = self.count_files(docx_dir, "*.docx")
+                results['docx_generated'] = max(0, docx_after - self.count_files(docx_dir, "*.docx"))
+                logger.info(f"📝 DOCX gerados: {results['docx_generated']}")
+            else:
+                results['errors'] += 1
+                logger.warning("⚠️ DOCX Processor falhou")
+        else:
+            logger.info(f"📝 Fase 3/4: Sem novos livros para processar DOCX")
+
+        # 4. COVER GENERATOR - Gerar capas (se houver novos livros)
+        results['covers_generated'] = 0
+
+        if results['translated'] > 0:
+            logger.info(f"🎨 Fase 4/4: Gerando capas de livros")
+
+            cover_cmd = [
+                sys.executable,
+                'src/cover_generator.py',
+                '--batch'
+            ]
+
+            cover_result = self.run_command(
+                "Cover Generator",
+                cover_cmd,
+                timeout=3600  # 1 hora
+            )
+
+            if cover_result['success']:
+                results['covers_generated'] = results['translated']  # Assume 1 capa por livro
+                logger.info(f"🎨 Capas geradas para {results['covers_generated']} livros")
+            else:
+                results['errors'] += 1
+                logger.warning("⚠️ Cover Generator falhou")
+        else:
+            logger.info(f"🎨 Fase 4/4: Sem novos livros para gerar capas")
+
         # Tempo total
         results['elapsed'] = time.time() - cycle_start
 
@@ -364,6 +421,8 @@ class CycleExecutor:
         logger.info(f"✅ CICLO COMPLETADO EM {results['elapsed']/60:.1f} minutos")
         logger.info(f"   Downloads: {results['downloaded']}")
         logger.info(f"   Traduções: {results['translated']}")
+        logger.info(f"   DOCX gerados: {results.get('docx_generated', 0)}")
+        logger.info(f"   Capas geradas: {results.get('covers_generated', 0)}")
         logger.info(f"   Erros: {results['errors']}")
         logger.info("="*70)
 
