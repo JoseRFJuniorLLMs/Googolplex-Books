@@ -1242,93 +1242,232 @@ El Triángulo = El Espíritu
 
 
 
-"""
 
-3. Deus Piscis, nada dentro de si mesmo. 
+3. Dios Piscis, nada dentro de sí mismo. 
 
-4. Deus Áries, o esforço para começar.
 
-5. Deus Filho: Filho...
 
-6. Deus Touro, aquele que permanece.
 
-7. Deus Gêmeos, o par de opostos.
+4. Dios Aries, el esfuerzo para comenzar. 
 
-8. Deus Câncer: incoado na massa.
 
-9. Deus Leão, aparição Audaz.
 
-A figura = Alma
 
-1. Deus me ilumina.
+5. Dios Hijo:  Hijo... 
 
-2. Deus Lua, deixai-me depender e saber!
 
-3. Crescimento.
 
-4. Eu reconheço a Deus.
 
-5. Deus me reconhece a mim.
+6. Dios Taurus, aquel que permanece. 
 
-6. Oh, Vênus: deixai-me amar e dar!
 
-7. Eu amo a Deus.
 
-8. Deus me Amaz a mim.
 
-9. Oh, Mercúrio: deixai-me louvar e servir!
+7. Dios Géminis, el par de opuestos. 
 
-10. Purificação.
 
-11. Eu sirvo a Deus.
 
-12. Extinção.
 
-13. Deus me serve a mim.
+8. Dios Cáncer:  incoado en la masa. 
 
-14. Oh, Saturno: deixai-me compreender e fazer!
 
-15. Corrupção.
 
-16. Eu compreendo a Deus.
 
-17. Deus me compreende a mim.
+9. Dios Leo, aparición Osada. 
 
-18. Oh, Marte; deixai-me que me atreva e destrua!
 
-19. Eu destruo a Deus.
 
-20. Deus me destrói a mim.
 
-21. Oh, Júpiter: deixai-me resistir e sofrer!
+La figura = El Alma
 
-22. Curação.
 
-23. Eu ilumino a Deus.
 
-24. Ascensão.
 
-FIM
+1. Dios me alumbra. 
+
+
+
+
+2. Dios Luna, déjame depender y saber! 
+
+
+
+
+3. Crecimiento. 
+
+
+
+
+4. Yo reconozco a Dios. 
+
+
+
+
+5. Dios me reconoce a mí. 
+
+
+
+
+6. Oh, Venus: déjame amar y dar! 
+
+
+
+
+7. Yo amo a Dios. 
+
+
+
+
+8. Dios me Ama a mí. 
+
+
+
+
+9. Oh, Mercurio: déjame alabar y servir! 
+
+
+
+
+10. Purificación. 
+
+
+
+
+11. Yo sirvo a Dios. 
+
+
+
+
+12. Extinción. 
+
+
+
+
+13. Dios me sirve a mí. 
+
+
+
+
+14. Oh, Saturno: déjame comprender y hacer! 
+
+
+
+
+15. Corrupción. 
+
+
+
+
+16. Yo comprendo a Dios. 
+
+
+
+
+17. Dios me comprende a mí. 
+
+
+
+
+18. Oh, Marte; déjame que me atreva y destruya! 
+
+
+
+
+19. Yo destruyo a Dios. 
+
+
+
+
+20. Dios me destruye a mí. 
+
+
+
+
+21. Oh. Júpiter: déjame resistir y soportar! 
+
+
+
+
+22. Curación. 
+
+
+
+
+23. Yo alumbro a Dios. 
+
+
+
+
+24. Ascensión. 
+
+
+
+
+FIN
+
+
+
 
 20
 
-Esquema do Documento
+Document Outline
+
+
+
+
+
+
 
 II
 
+
+
+
+
+
+
 III
+
+
+
 
 IV
 
+
+
+
 V
 
-1. Eu me envolvo em minha carne
 
-2. Oh, Lua: dai-me vísceras!
 
-3. Eu me movo na matriz.
 
-O Triângulo = Espírito
 
-A figura = Alma
-"""
+
+
+
+
+
+1.Yo me envuelvo en mi carne
+
+
+
+
+2.Oh. Luna: dame entrañas! 
+
+
+
+
+3.Yo me muevo en la matriz. 
+
+
+
+
+
+
+
+El Triángulo = El Espíritu
+
+
+
+
+La figura = El Alma
