@@ -175,73 +175,59 @@ through the pin C (Collector) to the pin E (Emitter).
 https://youtu.be/BWxKoAFrFTk
 Automated Chessboard: Page 18
 
-Step 4: Chessboard
-Presentation :
-The role of the chessboard is of course to represent the 64 black and white squares but not only. It also needs to localize
-the chess pieces position and interact with the human player.
-Description :
-Chessboard :
-Standard chessboards are made of high density wooden material and a high thickness, which can heavily disturb the
-electromagnetic eld.
-Foamboard material was preferred. It is easier to model, has a good Matness and does not disturb the magnetic eld so
-much. A foamboard sheet of 5mm thickness was used.
-A chessboard sticker was applied on it to materialize the chess squares. You could nd on the internet some chessboard
-stickers on demand with your own dimensions.
-Localization of chess pieces :
-Automated Chessboard: Page 19
+Passo 4: Tabuleiro de Xadrez
+Apresentação:
+O papel do tabuleiro de xadrez é, obviamente, representar as 64 quadradas pretas e brancas, mas não apenas isso. Ele também precisa localizar a posição das peças de xadrez e interagir com o jogador humano.
+Descrição:
+Tabuleiro de Xadrez:
+Os tabuleiros padrão são feitos de material madeira de alta densidade e espessura elevada, o que pode fortemente perturbar o campo eletromagnético.
+O material preferido foi a espuma. É mais fácil modelar, tem boa aparência e não perturba tanto o campo magnético. Foi utilizado uma folha de espuma com 5mm de espessura.
+Um adesivo de tabuleiro de xadrez foi aplicado nele para materializar as quadradas do xadrez. Você poderia encontrar na internet alguns adesivos de tabuleiro de xadrez sob medida com suas próprias dimensões.
+Localização das peças de xadrez:
+Tabuleiro Automático de Xadrez: Página 19
 
-The chess pieces localization is essential. The objective is to inform the software of the displacement of the human player
-chess pieces.
-Magnetic sensors are placed below each chess piece square. So, when the magnet of the chess piece is above the sensor,
-the sensor will be activated. By comparing the activated sensors before and after the move, the chess piece
-displacement can be determined.
-The magnetic sensor or Reed switch is composed of a hermetic glass envelope with two Mexible metal contacts inside.
-The contact is normally open when there is no magnetic eld and close if a magnetic eld is present.
-The 64 chess squares must be equipped with the sensors to be sure to properly monitor and avoid missing any
-displacements.
-That means 64 sensors, which is impossible to connect all of them directly to the Arduino Nano, there are simply not
-enough pins on the boards. Multiplexers are used to increase the Arduino pins. The multiplexers are described in step 7.
-Game interface :
-Arcade buttons and LCD screen are placed on the chessboard to interact with the players. They allow to set the game
-modes and specify if the moves are not authorized.
-They allow to manage the countdowns time too, 10min are allocated for each player. Each player must press his button at
-the end of his turn. So, his countdown is stopped and the countdown of the opponent is started.
-Automated Chessboard: Page 20
+A localização das peças de xadrez é essencial. O objetivo é informar ao software o deslocamento das peças de xadrez do jogador humano.
+Sensores magnéticos são colocados abaixo de cada quadrado da peça de xadrez. Assim, quando o magnetismo da peça de xadrez estiver acima do sensor, o sensor será ativado. Comparando os sensores ativados antes e depois do movimento, pode-se determinar o deslocamento das peças.
+O sensor magnético ou switch de Reed é composto por uma envoltória hermética de vidro com dois contatos metálicos flexíveis dentro. O contato está normalmente aberto quando não há campo magnético e fechado se um campo magnético estiver presente.
+Os 64 quadrados do tabuleiro devem ser equipados com os sensores para garantir o monitoramento adequado e evitar a omissão de qualquer deslocamento.
+Isso significa 64 sensores, que é impossível conectar todos eles diretamente ao Arduino Nano, simplesmente não há suficientes pinos na placa. Multiplexadores são usados para aumentar os pinos do Arduino. Os multiplexadores são descritos no passo 7.
+Interface de jogo:
+Botões arcade e tela LCD são colocados no tabuleiro de xadrez para interagir com os jogadores. Eles permitem definir os modos de jogo e especificar se os movimentos não estão autorizados.
+Eles também permitem gerenciar as contagens regressivas do tempo, 10 minutos são alocados para cada jogador. Cada jogador deve pressionar seu botão no final de sua jogada. Assim, sua contagem regressiva é interrompida e a contagem regressiva do adversário é iniciada.
+Tabuleiro Automatizado: Página 20
 
-Automated Chessboard: Page 21
+Tabuleiro Automatizado: Página 21
 
 https://youtu.be/FEcARIQu50U
-Automated Chessboard: Page 22
+Tabuleiro Automatizado: Página 22
 
-Automated Chessboard: Page 23
+Tabuleiro Automatizado: Página 23
 
-Step 5: Box
-Presentation :
-The box allows to hide the mechanism, give a good esthetic and x the distance between the electromagnet and the
-chessboard.
-Description :
-Nothing complicated, just some foamboard sheets of 10 mm thick are assembled to form a box.
-Foamboard was preferred for its ease of being constructible.
-The height of the box walls is important, it xes the distance between the electromagnet and the chess pieces magnet.
-Depending on your setup and material selection you need to investigate the good distance to allow a good magnetic
-eld interaction and allow the chess pieces to move.
-A hole on one wall is added to plug the power supply connector.
-Automated Chessboard: Page 24
+"""
+Passo 5: Caixa
+Apresentação:
+A caixa permite esconder o mecanismo, dar uma boa estética e ajustar a distância entre o electromagneto e o tabuleiro de xadrez.
+Descrição:
+Nada complicado, apenas algumas folhas de foamboard de 10 mm de espessura são montadas para formar uma caixa.
+O foamboard foi preferido por sua facilidade de construção.
+A altura das paredes da caixa é importante, ela fixa a distância entre o electromagneto e as peças de xadrez magnéticas.
+Dependendo do seu setup e da seleção dos materiais, você precisa investigar a boa distância para permitir uma boa interação magnética
+e permitir que as peças de xadrez se movam.
+Um buraco em uma das paredes é adicionado para plugar o conector de alimentação.
+Tabuleiro de Xadrez Automático: Página 24
 
-Step 6: AI - Artiﬁcial Intelligence
-Presentation:
-In human Vs human mode, the software will check that the moves are authorized and for the human vs computer mode,
-the software needs to decide what will be the next best moves. An AI (Articial Intelligence) algorithm is used to make
-the decisions.
-Description:
-The AI proposed by this Instructable is based on an existing one. There are several eJcient AI chess programs available
-on the internet.
-For this project, the Micro Max chess program from H.G. Muller and ported for Arduino by Diego Cueva was preferred. It
-is a very smart, eJcient and it is particularly small (<2kB).
-The other main advantage is this program being an open source, so we can freely play with it, special THANKS to H.G.
-Muller & Diego Cueva.
-The principle of this program is based on Minimax (or MinMax) and Alpha-Beta algorithms.
-Automated Chessboard: Page 25
+Passo 6: AI - Inteligência Artificial
+Apresentação:
+No modo humano contra humano, o software verificará que os movimentos são autorizados e no modo humano contra computador,
+o software precisa decidir qual será o próximo melhor movimento. Um algoritmo de IA (Inteligência Artificial) é usado para tomar as decisões.
+Descrição:
+A IA proposta neste Instructable é baseada em uma existente. Existem vários programas de xadrez eficientes com IA disponíveis na internet.
+Para este projeto, o programa Micro Max de xadrez de H.G. Muller e portado para Arduino por Diego Cueva foi preferido. É um programa muito inteligente,
+eficiente e é particularmente pequeno (<2kB).
+Outro grande vantagem é que esse programa é open source, então podemos brincar com ele livremente, agradecimentos especiais a H.G. Muller & Diego Cueva.
+O princípio deste programa está baseado nos algoritmos Minimax (ou MinMax) e Alpha-Beta.
+Tabuleiro de Xadrez Automático: Página 25
+"""
 
 Minimax:
 O algoritmo Minimax funciona exatamente como um cérebro humano. Quando é a vez dele jogar, o IA analisará todas as suas próximas possíveis jogadas. Avaliará todas as possíveis respostas do Jogador Humano e quais serão suas respostas etc., etc.
