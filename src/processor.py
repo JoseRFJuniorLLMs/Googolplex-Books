@@ -42,7 +42,7 @@ from docx.oxml import OxmlElement
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from config.settings import (
     DATABASE_PATH, CACHE_PATH, LOG_DIR, TEMPLATE_DOCX,
-    INPUT_TXT_DIR, OUTPUT_DOCX_DIR,
+    INPUT_TXT_DIR, TRANSLATED_DIR, OUTPUT_DOCX_DIR,
     MODEL_BACKEND, OLLAMA_BASE_URL, OLLAMA_MODEL,
     GEMINI_API_KEY, OPENAI_API_KEY,
     MAX_CHUNK_TOKENS, MAX_OUTPUT_TOKENS, TEMPERATURE,
@@ -743,43 +743,53 @@ async def main_async():
         )
         return 0 if success else 1
 
-    # Modo batch
+    # Modo batch - processa livros traduzidos (pasta translated/)
     if args.batch:
-        logger.info(f"Modo batch: {INPUT_TXT_DIR}")
+        logger.info(f"Modo batch: {TRANSLATED_DIR}")
 
-        if not INPUT_TXT_DIR.exists():
-            logger.error(f"Diretório não existe: {INPUT_TXT_DIR}")
+        if not TRANSLATED_DIR.exists():
+            logger.error(f"Diretório não existe: {TRANSLATED_DIR}")
             return 1
 
-        authors = [d for d in INPUT_TXT_DIR.iterdir() if d.is_dir()]
-        if not authors:
-            logger.warning("Nenhuma pasta de autor")
+        # Busca todos os arquivos *_pt.txt na pasta translated
+        pt_files = list(TRANSLATED_DIR.rglob("*_pt.txt"))
+
+        if not pt_files:
+            logger.warning("Nenhum arquivo traduzido encontrado (*_pt.txt)")
             return 0
+
+        logger.info(f"Encontrados {len(pt_files)} arquivos traduzidos")
 
         success_count = 0
         fail_count = 0
 
-        for author_dir in sorted(authors):
-            author_name = author_dir.name
-            logger.info(f"\n--- Autor: {author_name} ---")
+        for txt_file in sorted(pt_files):
+            # Extrai nome do livro (remove _pt do final)
+            book_name = txt_file.stem.replace('_pt', '')
 
-            txt_files = [f for f in author_dir.glob("*.txt")
-                        if not any(x in f.name for x in ['_notas_', '_Final_', 'backup_'])]
+            # Usa pasta pai como autor (ou "Desconhecido" se estiver na raiz)
+            author_name = txt_file.parent.name if txt_file.parent != TRANSLATED_DIR else "Desconhecido"
 
-            for txt_file in sorted(txt_files):
-                book_name = txt_file.stem
-                output_dir = OUTPUT_DOCX_DIR / author_name
-                output_file = output_dir / f"{book_name}_Final.docx"
+            # Define saída
+            output_dir = OUTPUT_DOCX_DIR / author_name
+            output_file = output_dir / f"{book_name}_Final.docx"
 
-                ok = await process_book(
-                    txt_file, output_file, TEMPLATE_DOCX,
-                    author_name, book_name, client
-                )
+            # Pula se já existe
+            if output_file.exists():
+                logger.info(f"Já existe: {output_file.name}")
+                continue
 
-                if ok:
-                    success_count += 1
-                else:
-                    fail_count += 1
+            logger.info(f"\n--- Processando: {book_name} ({author_name}) ---")
+
+            ok = await process_book(
+                txt_file, output_file, TEMPLATE_DOCX,
+                author_name, book_name, client
+            )
+
+            if ok:
+                success_count += 1
+            else:
+                fail_count += 1
 
         logger.info("\n" + "="*60)
         logger.info(f"RESUMO: Sucesso={success_count}, Falhas={fail_count}")

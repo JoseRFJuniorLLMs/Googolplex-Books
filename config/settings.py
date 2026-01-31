@@ -32,6 +32,7 @@ TEMPLATE_DOCX = BASE_DIR / "Estrutura.docx"
 
 # Input/Output
 INPUT_TXT_DIR = BASE_DIR / "txt"
+TRANSLATED_DIR = BASE_DIR / "translated"
 OUTPUT_DOCX_DIR = BASE_DIR / "docx"
 
 # Criar diretórios se não existem
