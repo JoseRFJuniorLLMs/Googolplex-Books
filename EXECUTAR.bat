@@ -11,7 +11,7 @@ echo  ║           GOOGOLPLEX-BOOKS - SISTEMA DE LIVROS                   ║
 echo  ╠══════════════════════════════════════════════════════════════════╣
 echo  ║                                                                  ║
 echo  ║  [1] DAEMON COMPLETO (Download + Traducao + DOCX + Capas)        ║
-echo  ║  [2] Apenas DOWNLOAD de livros (Gutenberg + Archive.org)         ║
+echo  ║  [2] DOWNLOAD RAPIDO (massivo paralelo, 15 threads)             ║
 echo  ║  [3] Apenas TRADUCAO para Portugues                              ║
 echo  ║  [4] Apenas gerar DOCX dos traduzidos                            ║
 echo  ║  [5] Apenas gerar CAPAS com IA                                   ║
@@ -55,9 +55,10 @@ goto menu
 :download
 cls
 echo.
-echo  Baixando livros do Gutenberg + Archive.org...
+echo  DOWNLOAD MASSIVO PARALELO (15 threads)
+echo  Baixando 500 livros por idioma...
 echo.
-python run_dual_hunter.py --languages en es --limit 50
+python run_hunter_fast.py --languages en es --limit 500 --workers 15
 pause
 goto menu
 
