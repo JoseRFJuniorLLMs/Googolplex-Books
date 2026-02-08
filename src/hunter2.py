@@ -127,17 +127,41 @@ def sanitize_name(name: str, max_len: int = 80) -> str:
         name = name[:max_len].rsplit(' ', 1)[0]
     return name or "Unknown"
 
+def detect_language(text: str) -> str:
+    """Detecta idioma do texto (simples, baseado em palavras comuns)."""
+    if not text or len(text) < 100:
+        return 'unknown'
+
+    sample = text[:5000].lower()
+
+    # Contadores de palavras características
+    en_words = ['the', 'and', 'of', 'to', 'in', 'is', 'that', 'for', 'it', 'with']
+    es_words = ['el', 'la', 'de', 'que', 'y', 'en', 'los', 'del', 'las', 'por']
+    pt_words = ['o', 'de', 'a', 'e', 'que', 'do', 'da', 'em', 'um', 'para']
+    ru_words = ['и', 'в', 'не', 'на', 'с', 'что', 'он', 'как']
+
+    en_count = sum(1 for w in en_words if f' {w} ' in sample)
+    es_count = sum(1 for w in es_words if f' {w} ' in sample)
+    pt_count = sum(1 for w in pt_words if f' {w} ' in sample)
+    ru_count = sum(1 for w in ru_words if w in sample)
+
+    counts = {'en': en_count, 'es': es_count, 'pt': pt_count, 'ru': ru_count}
+    return max(counts, key=counts.get)
+
 def book_exists(author: str, title: str) -> bool:
-    """Verifica se livro já existe em txt/."""
-    author_clean = sanitize_name(author)
+    """Verifica se livro já existe em txt/ (qualquer idioma)."""
     title_clean = sanitize_name(title)
 
-    author_dir = TXT_DIR / author_clean
-    if not author_dir.exists():
-        return False
+    # Verifica em todas as subpastas de idioma
+    for lang_dir in TXT_DIR.iterdir():
+        if lang_dir.is_dir():
+            # Verifica com todos os sufixos de idioma
+            for suffix in ['_en', '_es', '_pt', '_ru', '_fr', '_de', '_it', '']:
+                txt_file = lang_dir / f"{title_clean}{suffix}.txt"
+                if txt_file.exists():
+                    return True
 
-    txt_file = author_dir / f"{title_clean}.txt"
-    return txt_file.exists()
+    return False
 
 # ============================================================================
 # ARCHIVE.ORG API
@@ -282,20 +306,22 @@ class ArchiveOrgHunter:
     def save_book(self, book: ArchiveBook, content: str) -> bool:
         """Salva conteúdo do livro em arquivo."""
         try:
-            author_clean = sanitize_name(book.creator)
             title_clean = sanitize_name(book.title)
 
-            # Cria diretório do autor
-            author_dir = TXT_DIR / author_clean
-            author_dir.mkdir(exist_ok=True)
+            # Detecta idioma
+            lang = detect_language(content)
 
-            # Salva arquivo
-            txt_file = author_dir / f"{title_clean}.txt"
+            # Cria diretório do idioma
+            lang_dir = TXT_DIR / lang
+            lang_dir.mkdir(exist_ok=True)
+
+            # Salva arquivo com sufixo de idioma
+            txt_file = lang_dir / f"{title_clean}_{lang}.txt"
 
             with open(txt_file, 'w', encoding='utf-8') as f:
                 f.write(content)
 
-            logger.info(f"✅ Salvo: {author_clean}/{title_clean}.txt")
+            logger.info(f"✅ Salvo: {lang}/{title_clean}_{lang}.txt")
             return True
 
         except Exception as e:

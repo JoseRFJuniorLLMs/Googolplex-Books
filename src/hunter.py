@@ -49,6 +49,13 @@ from config.settings import (
     CALIBRE_DIR
 )
 
+# Detecção de idioma
+try:
+    from langdetect import detect as langdetect_detect
+    HAS_LANGDETECT = True
+except ImportError:
+    HAS_LANGDETECT = False
+
 # ============================================================================
 # CONFIGURAÇÃO
 # ============================================================================
@@ -116,6 +123,49 @@ def normalize_for_search(text: str) -> str:
     text = unicodedata.normalize('NFKD', text)
     text = ''.join(c for c in text if not unicodedata.combining(c))
     return text.lower().strip()
+
+
+def detect_language_simple(text: str) -> str:
+    """Detecta idioma do texto (fallback method)."""
+    sample = text[:5000].lower()
+
+    # Palavras comuns por idioma
+    en_words = ['the', 'and', 'of', 'to', 'in', 'is', 'that', 'for', 'it', 'with']
+    es_words = ['el', 'la', 'de', 'que', 'y', 'en', 'los', 'del', 'las', 'por']
+    pt_words = ['o', 'de', 'a', 'e', 'que', 'do', 'da', 'em', 'um', 'para', 'é', 'com', 'não']
+    ru_words = ['и', 'в', 'не', 'на', 'с', 'что', 'он', 'как', 'это', 'я']
+
+    en_count = sum(1 for w in en_words if f' {w} ' in sample)
+    es_count = sum(1 for w in es_words if f' {w} ' in sample)
+    pt_count = sum(1 for w in pt_words if f' {w} ' in sample)
+    ru_count = sum(1 for w in ru_words if w in sample)
+
+    counts = {'en': en_count, 'es': es_count, 'pt': pt_count, 'ru': ru_count}
+    detected = max(counts, key=counts.get)
+
+    # Russo tem caracteres cirílicos - priorizar
+    if ru_count >= 3:
+        return 'ru'
+
+    return detected if counts[detected] > 0 else 'unknown'
+
+
+def detect_text_language(text: str) -> str:
+    """Detecta idioma do texto."""
+    if not text or len(text) < 100:
+        return 'unknown'
+
+    # Tenta langdetect primeiro
+    if HAS_LANGDETECT:
+        try:
+            lang = langdetect_detect(text[:5000])
+            if lang in ['en', 'es', 'pt', 'ru']:
+                return lang
+        except:
+            pass
+
+    # Fallback para método simples
+    return detect_language_simple(text)
 
 # ============================================================================
 # VERIFICADOR DE LIVROS EXISTENTES
@@ -404,47 +454,46 @@ class SmartHunter:
             self.stats["skipped"] += 1
             return False
 
-        # Pasta de destino
-        output_dir = TXT_DIR / author_clean
-        output_dir.mkdir(parents=True, exist_ok=True)
-        txt_path = output_dir / f"{title_clean}.txt"
-
-        if txt_path.exists():
-            self.stats["skipped"] += 1
-            return False
-
         logger.info(f"Baixando: {title_clean[:50]}...")
 
         # Tenta baixar TXT direto primeiro (mais rápido)
+        text = None
         if 'txt' in book.formats:
             text = self._download_and_read_txt(book.formats['txt'])
-            if text and len(text) > 1000:
-                with open(txt_path, 'w', encoding='utf-8') as f:
-                    f.write(text)
-                self.checker.add_book(book.title, book.author)
-                self.stats["downloaded"] += 1
-                self.stats["extracted"] += 1
-                logger.info(f"✓ {author_clean}/{title_clean}.txt ({len(text):,} chars)")
-                return True
 
-        # Tenta EPUB
-        if 'epub' in book.formats and HAS_EBOOKLIB:
+        # Se não conseguiu TXT, tenta EPUB
+        if (not text or len(text) < 1000) and 'epub' in book.formats and HAS_EBOOKLIB:
             temp_epub = TEMP_DIR / f"{book.id}.epub"
             if self._download_file(book.formats['epub'], temp_epub):
                 text = extract_text_from_epub(temp_epub)
                 temp_epub.unlink(missing_ok=True)
 
-                if text and len(text) > 1000:
-                    with open(txt_path, 'w', encoding='utf-8') as f:
-                        f.write(text)
-                    self.checker.add_book(book.title, book.author)
-                    self.stats["downloaded"] += 1
-                    self.stats["extracted"] += 1
-                    logger.info(f"✓ {author_clean}/{title_clean}.txt ({len(text):,} chars)")
-                    return True
+        # Se ainda não tem texto, retorna falso
+        if not text or len(text) < 1000:
+            self.stats["failed"] += 1
+            return False
 
-        self.stats["failed"] += 1
-        return False
+        # Detecta idioma
+        lang = detect_text_language(text)
+
+        # Pasta de destino por idioma
+        output_dir = TXT_DIR / lang
+        output_dir.mkdir(parents=True, exist_ok=True)
+        txt_path = output_dir / f"{title_clean}_{lang}.txt"
+
+        if txt_path.exists():
+            self.stats["skipped"] += 1
+            return False
+
+        # Salva arquivo
+        with open(txt_path, 'w', encoding='utf-8') as f:
+            f.write(text)
+
+        self.checker.add_book(book.title, book.author)
+        self.stats["downloaded"] += 1
+        self.stats["extracted"] += 1
+        logger.info(f"✓ {lang}/{title_clean}_{lang}.txt ({len(text):,} chars)")
+        return True
 
     def _download_and_read_txt(self, url: str) -> Optional[str]:
         """Baixa e lê TXT diretamente."""

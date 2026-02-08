@@ -48,7 +48,7 @@ MODEL_BACKEND = os.getenv("MODEL_BACKEND", "ollama")
 
 # Ollama
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:7b")  # Modelo rápido recomendado
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:32b")  # Modelo de máxima qualidade
 
 # Gemini (fallback)
 GEMINI_API_KEY = os.getenv("GOOGLE_API_KEY", "")
@@ -65,7 +65,7 @@ MAX_OUTPUT_TOKENS = int(os.getenv("MAX_OUTPUT_TOKENS", "4096"))
 TEMPERATURE = float(os.getenv("TEMPERATURE", "0.3"))
 MAX_RETRIES = int(os.getenv("MAX_RETRIES", "5"))
 RETRY_BASE_WAIT = int(os.getenv("RETRY_BASE_WAIT", "5"))
-PARALLEL_CHUNKS = int(os.getenv("PARALLEL_CHUNKS", "2"))
+PARALLEL_CHUNKS = int(os.getenv("PARALLEL_CHUNKS", "4"))  # Aumentado para 32GB RAM
 
 # Mínimo de texto para processar
 MIN_TEXT_LENGTH = 500

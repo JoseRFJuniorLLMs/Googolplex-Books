@@ -1,18 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-RUN_TRANSLATOR.PY - Tradutor Massivo de Livros (OLLAMA LOCAL)
-==============================================================
-Traduz livros de EN/ES/RU para PT-BR usando Ollama LOCAL (sem API externa).
+RUN_TRANSLATOR.PY - Tradutor Massivo de Livros (NPU + ONNX)
+===========================================================
+Traduz livros de EN/ES/RU para PT-BR usando NPU (Intel AI Boost).
 
-Modelos rápidos recomendados:
-- qwen2.5:7b (RECOMENDADO - rápido, melhor qualidade)
-- gemma2:2b (MAIS RÁPIDO, menor qualidade)
-- llama3.2:3b (rápido, boa qualidade)
+Modelo: Qwen2.5-32B-Instruct (ONNX + DirectML)
+Hardware: NPU (48 TOPS)
 
 Uso:
     python run_translator.py --languages en es --limit 10
-    python run_translator.py --model qwen2.5:7b
 """
 
 import os
@@ -32,7 +29,8 @@ import requests
 
 # Configurações
 sys.path.insert(0, str(Path(__file__).parent))
-from config.settings import DATA_DIR, BASE_DIR, OLLAMA_BASE_URL
+from config.settings import DATA_DIR, BASE_DIR
+from src.translator_npu import NPUTranslator
 
 # Paths
 TXT_DIR = BASE_DIR / "txt"
@@ -98,99 +96,55 @@ LANG_NAMES = {
     'pt': 'português'
 }
 
-class OllamaTranslator:
-    """Tradutor usando Ollama LOCAL (sem API externa)."""
+class NPUTranslatorWrapper:
+    """Tradutor usando NPU (Intel AI Boost) via ONNX Runtime + DirectML."""
 
-    def __init__(self, model_name: str = "qwen2.5:7b", base_url: str = None):
+    def __init__(self, model_path: str = "d:/modelos/qwen2.5-32b-instruct-onnx"):
         """
-        Inicializa tradutor local.
+        Inicializa tradutor NPU.
 
         Args:
-            model_name: Nome do modelo Ollama (padrão: qwen2.5:7b, recomendado)
-                       Opções: qwen2.5:7b, gemma2:2b, llama3.2:3b
-            base_url: URL do Ollama (padrão: http://localhost:11434)
+            model_path: Caminho para o modelo ONNX
         """
-        self.base_url = base_url or OLLAMA_BASE_URL
-        self.model_name = model_name
+        self.model_path = model_path
+        self.model_name = "Qwen2.5-32B-ONNX-NPU"
         self.cache = TranslationCache(CACHE_DB)
 
-        # Testa conexão
+        # Inicializar tradutor NPU
         try:
-            response = requests.get(f"{self.base_url}/api/tags", timeout=5)
-            if response.status_code != 200:
-                raise ConnectionError("Ollama não está rodando")
-
-            # Verifica se modelo existe
-            models = response.json().get('models', [])
-            model_names = [m['name'] for m in models]
-
-            if model_name not in model_names:
-                print(f"⚠️ Modelo {model_name} não encontrado localmente")
-                print(f"📥 Baixe com: ollama pull {model_name}")
-                sys.exit(1)
-
-            print(f"✅ Ollama LOCAL conectado: {self.base_url}")
-            print(f"✅ Modelo: {model_name} (LOCAL, sem API)")
+            print(f"🔥 Carregando Qwen2.5-32B na NPU...")
+            print(f"📁 Modelo: {model_path}")
+            self.translator = NPUTranslator(model_path)
+            print(f"✅ MODELO CARREGADO NA NPU (48 TOPS)!")
+            print(f"✅ DirectML ativo")
 
         except Exception as e:
-            print(f"❌ Erro conectando ao Ollama: {e}")
-            print(f"💡 Certifique-se que Ollama está rodando: ollama serve")
+            print(f"❌ Erro carregando modelo: {e}")
+            print(f"💡 Certifique-se que o modelo foi convertido para ONNX")
             sys.exit(1)
 
     def translate_chunk(self, chunk: str, source_lang: str, retries: int = 3) -> str:
-        """Traduz um chunk usando Ollama LOCAL."""
+        """Traduz um chunk usando NPU (Intel AI Boost)."""
         # Cache
         cached = self.cache.get(chunk)
         if cached:
             return cached
 
-        lang_name = LANG_NAMES.get(source_lang, source_lang)
-
-        prompt = f"""Traduza o texto abaixo de {lang_name} para português brasileiro.
-
-REGRAS:
-- Tradução fiel ao original
-- Mantenha estrutura de parágrafos
-- Preserve nomes próprios
-- NÃO adicione comentários
-- Retorne APENAS a tradução
-
-TEXTO:
-\"\"\"
-{chunk}
-\"\"\"
-
-TRADUÇÃO:"""
-
         for attempt in range(retries):
             try:
-                response = requests.post(
-                    f"{self.base_url}/api/generate",
-                    json={
-                        "model": self.model_name,
-                        "prompt": prompt,
-                        "stream": False,
-                        "options": {
-                            "temperature": 0.2,
-                            "num_predict": 8192,
-                        }
-                    },
-                    timeout=120  # 2 minutos
-                )
+                # Traduzir NA NPU
+                translated = self.translator.translate(chunk, source_lang=source_lang, target_lang="pt")
 
-                if response.status_code == 200:
-                    result = response.json()
-                    translated = result.get('response', '').strip()
-
-                    if translated:
-                        self.cache.set(chunk, translated, source_lang, self.model_name)
-                        return translated
+                if translated and translated != chunk:
+                    self.cache.set(chunk, translated, source_lang, self.model_name)
+                    return translated
 
             except Exception as e:
                 if attempt < retries - 1:
+                    print(f"⚠️ Tentativa {attempt+1} falhou, retentando...")
                     time.sleep(2 ** attempt)
                 else:
-                    print(f"⚠️ Erro: {e}")
+                    print(f"❌ Erro após {retries} tentativas: {e}")
 
         return chunk  # Fallback
 
@@ -363,18 +317,25 @@ Instalar modelo:
 
     args = parser.parse_args()
 
-    # Tradutor
+    # Tradutor NPU
     print("="*60)
-    print("🚀 TRADUTOR LOCAL - OLLAMA (SEM API EXTERNA)")
+    print("🔥 TRADUTOR NPU - INTEL AI BOOST (48 TOPS)")
     print("="*60)
 
     try:
-        translator = OllamaTranslator(args.model)
+        model_path = "d:/modelos/qwen2.5-32b-instruct-onnx"
+        translator = NPUTranslatorWrapper(model_path)
     except Exception as e:
         print(f"❌ Erro ao iniciar tradutor: {e}")
         return 1
 
-    # Busca livros
+    # Inicializa validador
+    sys.path.insert(0, str(Path(__file__).parent / 'src'))
+    from validator import FileValidator
+    invalid_db = DATA_DIR / "invalid_files.db"
+    validator = FileValidator(invalid_db)
+
+    # Busca livros (apenas válidos)
     target_langs = set(args.languages)
     books = find_books_to_translate(target_langs)
 
